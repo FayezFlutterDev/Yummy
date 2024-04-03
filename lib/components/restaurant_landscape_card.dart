@@ -30,7 +30,7 @@ class _RestaurantLandscapeCardState extends State<RestaurantLandscapeCard> {
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(8.0)),
             child: AspectRatio(
-                aspectRatio: 1,
+                aspectRatio: 2,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
