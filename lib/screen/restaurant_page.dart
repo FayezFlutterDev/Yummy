@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:fooderlich/models/cart_manager.dart';
+import 'package:fooderlich/models/order_manager.dart';
+import 'package:fooderlich/screen/checkout_page.dart';
+import '../components/item_details.dart';
 import '../components/restaurant_item.dart';
 import '../models/restaurant.dart';
 
 class RestaurantPage extends StatefulWidget {
   final Restaurant restaurant;
+  final CartManager cartManager;
+  final OrderManager ordersManager;
 
   const RestaurantPage({
     super.key,
     required this.restaurant,
+    required this.cartManager,
+    required this.ordersManager,
   });
 
   @override
@@ -17,17 +25,20 @@ class RestaurantPage extends StatefulWidget {
 class _RestaurantPageState extends State<RestaurantPage> {
   static const desktopThreshold = 700;
   static const double largeScreenPercentage = 0.9;
-static const double maxWidth = 1000;
+  static const double maxWidth = 1000;
+  static const double drawerWidth = 375.0;
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   int calculateColumnCount(double screenWidth) {
     return screenWidth > desktopThreshold ? 2 : 1;
   }
-double _calculateConstrainedWidth(double screenWidth) {
-  return (screenWidth > desktopThreshold
-          ? screenWidth * largeScreenPercentage
-          : screenWidth)
-      .clamp(0.0, maxWidth);
-}
+
+  double _calculateConstrainedWidth(double screenWidth) {
+    return (screenWidth > desktopThreshold
+            ? screenWidth * largeScreenPercentage
+            : screenWidth)
+        .clamp(0.0, maxWidth);
+  }
 
   CustomScrollView _buildCustomScrollView() {
     return CustomScrollView(
@@ -35,7 +46,6 @@ double _calculateConstrainedWidth(double screenWidth) {
         _buildSliverAppBar(),
         _buildInfoSection(),
         _buildGridViewSection('Menu'),
-        
       ],
     );
   }
@@ -115,11 +125,26 @@ double _calculateConstrainedWidth(double screenWidth) {
     );
   }
 
+  void _showBottomSheet(Item item) {
+    showModalBottomSheet<void>(
+      isScrollControlled: true,
+      context: context,
+      constraints: const BoxConstraints(maxWidth: 480),
+      builder: (context) => ItemDetails(
+        item: item,
+        cartManager: widget.cartManager,
+        quantityUpdated: () {
+          setState(() {});
+        },
+      ),
+    );
+  }
+
   Widget _buildGridItem(int index) {
     final item = widget.restaurant.items[index];
     return InkWell(
       onTap: () {
-        // Present Bottom Sheet in the future.
+        _showBottomSheet(item);
       },
       child: RestaurantItem(item: item),
     );
@@ -171,19 +196,52 @@ double _calculateConstrainedWidth(double screenWidth) {
     );
   }
 
- @override
-Widget build(BuildContext context) {
-  final screenWidth = MediaQuery.of(context).size.width;
-  final constrainedWidth = _calculateConstrainedWidth(screenWidth);
-
-  return Scaffold(
-    body: Center(
-      child: SizedBox(
-        width: constrainedWidth,
-        child: _buildCustomScrollView(),
+  Widget _buildEndDrawer() {
+    return SizedBox(
+      width: drawerWidth,
+      child: Drawer(
+        child: CheckoutPage(
+          cartManager: widget.cartManager,
+          didUpdate: () {
+            setState(() {});
+          },
+          onSubmit: (order) {
+            widget.ordersManager.addOrder(order);
+            Navigator.popUntil(context, (route) => route.isFirst);
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
+  void openDrawer() {
+    scaffoldKey.currentState!.openEndDrawer();
+  }
+
+  Widget _buildFloatingActionButton() {
+    return FloatingActionButton.extended(
+      onPressed: openDrawer,
+      tooltip: 'Cart',
+      icon: const Icon(Icons.shopping_cart),
+      label: Text('${widget.cartManager.items.length} Items in cart'),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final constrainedWidth = _calculateConstrainedWidth(screenWidth);
+
+    return Scaffold(
+      key: scaffoldKey,
+      endDrawer: _buildEndDrawer(),
+      body: Center(
+        child: SizedBox(
+          width: constrainedWidth,
+          child: _buildCustomScrollView(),
+        ),
+      ),
+      floatingActionButton: _buildFloatingActionButton(),
+    );
+  }
 }

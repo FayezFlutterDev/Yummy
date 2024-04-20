@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:fooderlich/screen/restaurant_page.dart';
 
+import '../models/cart_manager.dart';
+import '../models/order_manager.dart';
 import '../models/restaurant.dart';
 import 'restaurant_landscape_card.dart';
 
 class RestaurantSection extends StatelessWidget {
-  final List<Restaurant> restaurants;
+   final List<Restaurant> restaurants;
+  final CartManager cartManager;
+  final OrderManager orderManager;
 
   const RestaurantSection({
     super.key,
     required this.restaurants,
+    required this.cartManager,
+    required this.orderManager,
   });
+
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +45,18 @@ class RestaurantSection extends StatelessWidget {
                 return SizedBox(
                   width: 300,
                   child: RestaurantLandscapeCard(
-                    restaurant: restaurants[index],
+                    restaurant: restaurants[index],onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RestaurantPage(
+                            restaurant: restaurants[index],
+                            cartManager: cartManager,
+                            ordersManager: orderManager,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
